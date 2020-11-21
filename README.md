@@ -8,10 +8,8 @@ Generic Ansible role for couchbase cluster formation. This role is responsible f
   * Creating cluster for the main node
   * Adding the other nodes to the cluster
 * Cluster configuration
-  * Setting e-mail configuration
   * Setting autofailover configuration
   * Creating default user groups
-  * Creating dba user
   * Configuring backup
 
 Requirements
