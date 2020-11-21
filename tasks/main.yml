@@ -1,0 +1,71 @@
+---
+    # tasks file for cocuhbase-provision
+
+- name: Install OpenJDK on Operating System for RPM
+  yum:
+    name: "{{ rhel_jdk_version }}"
+    state: present
+  when: >-
+    ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat
+    Enterprise Linux'
+
+- name: Install OpenJDK on Operating System for DEB
+  apt:
+    name: "{{ debian_jdk_version }}"
+    state: present
+    update_cache: 'yes'
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Add couchbase package for RPM
+  yum:
+    name: "{{ rhel_cb_package }}"
+    state: present
+  when: >-
+    ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat
+    Enterprise Linux'
+
+- name: Add couchbase package for DEB
+  apt:
+    deb: "{{ debian_cb_package }}"
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Install couchbase specific version
+  apt:
+    name: 'couchbase-server={{ couchbase_version }}*'
+    state: present
+    update_cache: 'yes'
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Install couchbase specific version
+  yum:
+    name: 'couchbase-server-{{ couchbase_version }}*'
+    state: present
+  when: >-
+    ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat
+    Enterprise Linux'
+
+- name: Start Couchbase Service on Operating System
+  service:
+    name: couchbase-server
+    state: started
+    enabled: 'yes'
+
+- name: Grant Permissions to Couchbase Operating System User for Data Directory
+  file:
+    path: "{{ mounpoint }}"
+    owner: couchbase
+    group: couchbase
+    mode: '0700'
+  when: do_init_different_mounpoint == 'yes'
+    
+- name: Initalize Nodes
+  shell: /opt/couchbase/bin/couchbase-cli node-init -c 127.0.0.1 -u {{ couchbase_user }} -p {{ couchbase_password }} --node-init-data-path {{ mountpoint }} --node-init-index-path {{ mountpoint }}
+  become: true
+  args:
+    executable: /bin/bash
+  ignore_errors: yes
+  when: do_init_different_mounpoint == 'yes'
+
+- include: sysctl.yml
+
+- include: block_device.yml

@@ -1,0 +1,21 @@
+[couchbase-main]
+node-1 ansible_ssh_host=ip_1 node_role=data
+
+
+[couchbase-others]
+node-2 ansible_ssh_host=ip_2 node_role=data
+node-3 ansible_ssh_host=ip_3 node_role=data
+
+[couchbase-backup]
+node-backup ansible_ssh_host=ip_4
+
+[all:vars]
+cb_main_node=ip_1
+couchbase_user=some_god_mode_user
+couchbase_password=some_pass
+cluster_name=a_pretty_cluster_name
+do_init_different_mounpoint=yes
+mountpoint=/cb-data
+couchbase_backup_logical_name=a_pretty_name
+ansible_ssh_user=some_ssh_user
+ansible_ssh_private_key_file=pem_file_if_exists

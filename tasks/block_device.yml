@@ -1,0 +1,20 @@
+- name: Copy RC Local File to Server for Reboot
+  copy:
+    src: disk_tune.sh
+    dest: /etc/rc.local
+    owner: root
+    group: root
+    mode: 0777
+- name: Copy FS Tune Sh File into Server
+  copy:
+    src: disk_tune.sh
+    dest: /tmp/tune.sh
+    owner: root
+    group: root
+    mode: 0777
+- name: Run FS Tune
+  shell: /tmp/tune.sh
+  become: true
+  args:
+    executable: /bin/bash
+  ignore_errors: 'yes'

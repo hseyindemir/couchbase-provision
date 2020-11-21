@@ -1,0 +1,84 @@
+---
+- name: Disable Swap Option on Couchbase Servers
+  sysctl:
+    name: vm.swappiness
+    value: "1"
+    state: present
+
+- name: Tune net.ipv4.tcp_keepalive_time
+  sysctl:
+    name: net.ipv4.tcp_keepalive_time
+    value: "30"
+    state: present
+
+- name: Tune net.ipv4.tcp_keepalive_probes
+  sysctl:
+    name: net.ipv4.tcp_keepalive_probes
+    value: "5"
+    state: present
+
+- name: Tune net.ipv4.tcp_keepalive_intvl
+  sysctl:
+    name: net.ipv4.tcp_keepalive_intvl
+    value: "15"
+    state: present
+
+- name: Tune net.ipv4.tcp_tw_recycle
+  sysctl:
+    name: net.ipv4.tcp_tw_recycle
+    value: "1"
+    state: present
+
+- name: Tune net.ipv4.tcp_max_tw_buckets
+  sysctl:
+    name: net.ipv4.tcp_max_tw_buckets
+    value: "1440000"
+    state: present
+
+- name: Tune vm.overcommit_memory
+  sysctl:
+    name: vm.overcommit_memory
+    value: "0"
+    state: present
+
+- name: Tune vm.min_free_kbytes
+  sysctl:
+    name: vm.min_free_kbytes
+    value: "524288"
+    state: present
+
+- name: Tune vm.dirty_bytes
+  sysctl:
+    name: vm.dirty_bytes
+    value: "2147483648"
+    state: present
+
+- name: Tune fs.file-max
+  sysctl:
+    name: fs.file-max
+    value: "30000000"
+    state: present
+
+- name: Tune vm.dirty_background_bytes
+  sysctl:
+    name: vm.dirty_background_bytes
+    value: "1073741824"
+    state: present
+
+- name: Tune vm.dirty_expire_centisecs
+  sysctl:
+    name: vm.dirty_expire_centisecs
+    value: "300"
+    state: present
+
+- name: Tune vm.dirty_writeback_centisecs
+  sysctl:
+    name: vm.dirty_writeback_centisecs
+    value: "100"
+    state: present
+    
+- name: Tune vm.zone_reclaim_mode
+  sysctl:
+    name: vm.zone_reclaim_mode
+    value: "0"
+    state: present

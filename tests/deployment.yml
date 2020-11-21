@@ -1,47 +1,30 @@
-couchbase-provision
-=========
-
-Generic Ansible role for couchbase cluster formation. This role is responsible for creating and configuring couchbase cluster. It includes;
-* Installation of required couchbase packages
-* Cluster formation
-  * Initializing all nodes with different data directory
-  * Creating cluster for the main node
-  * Adding the other nodes to the cluster
-* Cluster configuration
-  * Setting e-mail configuration
-  * Setting autofailover configuration
-  * Creating default user groups
-  * Creating dba user
-  * Configuring backup
-
-Requirements
-------------
-
-* Jinja2 >= 2.8
-* Ansible >= 2.9
-
-Role Variables
---------------
-```ansible
-couchbase_version: 6.5.1
-rhel_jdk_version: java-1.8.0-openjdk
-debian_jdk_version: openjdk-8-jdk
-rhel_cb_package: https://packages.couchbase.com/releases/couchbase-release/couchbase-release-1.0-x86_64.rpm
-debian_cb_package: https://packages.couchbase.com/releases/couchbase-release/couchbase-release-1.0-amd64.deb
-mountpoint: /cb-data
-do_init_different_mounpoint: 'yes'
-```
-
-
-Example Playbook
-----------------
-
-```ansible
 ---
 - hosts: all
   become: true
   roles:
+    - role: trendyol.disable-thp
     - role: couchbase-provision
+      vars:
+        couchbase_version: 6.5.1
+        rhel_jdk_version: java-1.8.0-openjdk
+        debian_jdk_version: openjdk-8-jdk
+        rhel_cb_package: https://packages.couchbase.com/releases/couchbase-release/couchbase-release-1.0-x86_64.rpm
+        debian_cb_package: https://packages.couchbase.com/releases/couchbase-release/couchbase-release-1.0-amd64.deb
+        mountpoint: /cb-data
+        do_init_different_mounpoint: 'yes'
+    - role: mesaguy.prometheus
+      vars:
+        prometheus_manage_client_tgroups: false
+        prometheus_node_exporter_port: 9120
+        prometheus_couchbase_exporter_blakelead_port: 9421
+        prometheus_couchbase_exporter_blakelead_env_vars:
+          CB_EXPORTER_DB_USER: "{{ couchbase_user }}"
+          CB_EXPORTER_DB_PASSWORD: "{{ couchbase_password }}"
+        prometheus_node_exporter_textfiles_directory: '/opt/prometheus/etc/node_exporter_textfiles'
+        prometheus_components:
+          - node_exporter
+          - couchbase_exporter_blakelead
+
 - name: Initialize the cluster on the coordinator node
   hosts: couchbase-main
   tasks:
@@ -79,6 +62,18 @@ Example Playbook
     args:
       executable: /bin/bash
     ignore_errors: yes
+  - name: Configure kebap user for Main Cluster
+    shell: /opt/couchbase/bin/couchbase-cli user-manage -c {{ cb_main_node }}  -u {{ couchbase_user }} --password {{ couchbase_password }} --set --rbac-username kebap --rbac-name "kebap" --rbac-password Nostradamus.987! --roles admin --auth-domain local
+    become: true
+    args:
+      executable: /bin/bash
+    ignore_errors: yes
+  - name: Configure email settings for the cluster
+    shell: /opt/couchbase/bin/couchbase-cli setting-alert -c {{ cb_main_node }} --username {{ couchbase_user }} --password {{ couchbase_password }} --enable-email-alert 1 --email-user sql@trendyolmail.com --email-password 3DyH5hyPdGg8kd2lTCDs --email-host smtp.mailgun.org --email-port 587 --email-recipients h7v6m5j5i6x7i1u6@trendyol.slack.com --email-sender {{ cluster_name }}@trendyolmail.com --enable-email-encrypt 1 --alert-auto-failover-node --alert-auto-failover-max-reached --alert-auto-failover-node-down --alert-auto-failover-cluster-small --alert-auto-failover-disable --alert-ip-changed --alert-disk-space --alert-meta-overhead --alert-meta-oom --alert-write-failed --alert-audit-msg-dropped --alert-indexer-max-ram --alert-timestamp-drift-exceeded
+    become: true
+    args:
+      executable: /bin/bash
+    ignore_errors: yes
 
   - name: Configure wizard group
     shell: /opt/couchbase/bin/couchbase-cli user-manage --cluster http://{{ cb_main_node }} --username {{ couchbase_user }} --password {{ couchbase_password }} --set-group --group-name theMagic --roles cluster_admin
@@ -86,6 +81,7 @@ Example Playbook
     args:
       executable: /bin/bash
     ignore_errors: yes
+
   - name: Configure replication group
     shell: /opt/couchbase/bin/couchbase-cli user-manage \
            --cluster http://{{ cb_main_node }} \
@@ -149,54 +145,3 @@ Example Playbook
         server_address: "{{ cb_main_node }}"
         period: 30
         mountpoint: /cb-data
-- name: Install exporters
-  hosts: all
-  roles:
-    - role: mesaguy.prometheus
-      vars:
-        prometheus_manage_client_tgroups: false
-        prometheus_node_exporter_port: 9120
-        prometheus_couchbase_exporter_blakelead_port: 9421
-        prometheus_couchbase_exporter_blakelead_env_vars:
-          CB_EXPORTER_DB_USER: "{{ couchbase_user }}"
-          CB_EXPORTER_DB_PASSWORD: "{{ couchbase_password }}"
-        prometheus_node_exporter_textfiles_directory: '/opt/prometheus/etc/node_exporter_textfiles'
-        prometheus_components:
-          - node_exporter
-          - couchbase_exporter_blakelead
-```
-Example Inventory
-----------------
-
-```ansible
-[couchbase-main]
-node-1 ansible_ssh_host=ip_1 node_role=data
-
-
-[couchbase-others]
-node-2 ansible_ssh_host=ip_2 node_role=data
-node-3 ansible_ssh_host=ip_3 node_role=data
-
-[couchbase-backup]
-node-backup ansible_ssh_host=ip_4
-
-[all:vars]
-cb_main_node=ip_1
-couchbase_user=some_god_mode_user
-couchbase_password=some_pass
-cluster_name=a_pretty_cluster_name
-couchbase_backup_logical_name=a_pretty_name
-ansible_ssh_user=some_ssh_user
-ansible_ssh_private_key_file=pem_file_if_exists
-```
-
-Running the Playbook
-------------------
-```bash
-ansible-playbook -i inventory deployment.yml
-```
-
-
-Contributors
-------------------
-* Hüseyin DEMİR
